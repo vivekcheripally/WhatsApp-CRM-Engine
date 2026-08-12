@@ -1,0 +1,30 @@
+{
+  "venvPath": "backend",
+  "venv": "venv",
+  "include": [
+    "backend"
+  ],
+  "extraPaths": [
+    "backend",
+    "backend/core",
+    "backend/models",
+    "backend/routes",
+    "backend/services",
+    "backend/schemas"
+  ],
+  "executionEnvironments": [
+    {
+      "root": "backend",
+      "extraPaths": [
+        ".",
+        "core",
+        "models",
+        "routes",
+        "services",
+        "schemas"
+      ]
+    }
+  ],
+  "reportMissingImports": "none",
+  "reportMissingModuleSource": "none"
+}

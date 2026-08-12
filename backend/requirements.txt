@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+websockets
+sqlalchemy
+psycopg2-binary
+requests
+python-multipart
+pandas
+openpyxl
+apscheduler
+PyJWT
+httpx
+boto3
+redis
+pydantic-settings

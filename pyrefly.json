@@ -1,0 +1,16 @@
+{
+  "venvPath": "backend",
+  "venv": "venv",
+  "searchPaths": [
+    "backend",
+    "backend/core",
+    "backend/models",
+    "backend/routes",
+    "backend/services",
+    "backend/schemas"
+  ],
+  "disabledDiagnostics": [
+    "reportMissingImports",
+    "reportMissingModuleSource"
+  ]
+}

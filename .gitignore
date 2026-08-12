@@ -1,0 +1,85 @@
+# ─── Node.js & Next.js ────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+out/
+frontend/out/
+
+# ─── Python Caches & Binaries ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ─── Virtual Environments ─────────────────────────────────────────────────────
+venv/
+.venv/
+backend/venv/
+backend/.venv/
+env/
+ENV/
+
+# ─── Environment & Secret Files ───────────────────────────────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*
+!.env.example
+
+# ─── Background Workers & Celery Beat Database ────────────────────────────────
+celerybeat-schedule
+celerybeat-schedule*
+*.dir
+*.db
+*.sqlite
+*.sqlite3
+
+# ─── Media Uploads (Ignore user uploads, keep folder structure) ───────────────
+uploads/*
+!uploads/.gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# ─── Testing & Coverage Caches ────────────────────────────────────────────────
+.coverage
+.coverage.*
+.pytest_cache/
+htmlcov/
+
+# ─── Logs & Diagnostic Files ─────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# ─── Operating System & Editor Files ──────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
