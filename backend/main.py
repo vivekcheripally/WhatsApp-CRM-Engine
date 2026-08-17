@@ -34,6 +34,13 @@ from routes.deps import get_current_user
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("[%s] Starting up...", settings.APP_NAME)
+    try:
+        import models.postgres_model  # noqa: F401
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables initialized/verified successfully.")
+    except Exception as e:
+        logger.warning("Could not auto-create database tables on startup: %s", e)
+
     logger.info("Celery task queue & Celery Beat active for background jobs.")
     yield
 
@@ -91,7 +98,10 @@ app.include_router(inbox_scheduled_router, dependencies=[Depends(get_current_use
 # Authentication & Super Admin
 app.include_router(auth_router)
 app.include_router(super_admin_router)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+import os
+_uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
+os.makedirs(_uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=_uploads_dir), name="uploads")
 
 
 @app.get("/", tags=["Health"])

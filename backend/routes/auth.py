@@ -65,6 +65,8 @@ def revoke_all_sessions(
     db: Session = Depends(get_db),
 ):
     user_id = current_user.get("id") or current_user.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User identity missing")
     res = AuthService(db).revoke_all_user_sessions(user_id)
     response.delete_cookie(key="refresh_token", httponly=True, secure=settings.COOKIE_SECURE, samesite=settings.COOKIE_SAMESITE)
     response.delete_cookie(key="access_token", httponly=True, secure=settings.COOKIE_SECURE, samesite=settings.COOKIE_SAMESITE)
@@ -79,6 +81,8 @@ def force_change_password(
 ):
     try:
         user_id = current_user.get("id") or current_user.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User identity missing")
         return AuthService(db).force_change_password(
             user_id=user_id,
             new_password=payload.new_password,
@@ -98,16 +102,21 @@ def change_password(
 ):
     try:
         user_id = current_user.get("id") or current_user.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User identity missing")
+        current_pw = payload.current_password or payload.old_password
+        if not current_pw:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is required")
         return AuthService(db).change_password(
             user_id=user_id,
-            old_password=payload.old_password,
+            old_password=current_pw,
             new_password=payload.new_password,
             confirm_password=payload.confirm_password,
         )
     except ValidationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except ResourceNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/me")

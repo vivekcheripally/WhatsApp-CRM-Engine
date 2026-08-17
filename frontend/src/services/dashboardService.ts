@@ -5,6 +5,11 @@ export const getUnifiedDashboard = async () => {
   return response.data;
 };
 
+export const getAnalyticsReport = async (range = "7d") => {
+  const response = await api.get(`/api/dashboard/analytics?range=${range}`);
+  return response.data;
+};
+
 export const getDashboardOverview = async () => {
   const response = await api.get("/api/dashboard/overview");
   return response.data;
@@ -23,7 +28,7 @@ export const getDashboardSummary = async () => {
 export const getMessageAnalytics = async () => {
   try {
     const data = await getUnifiedDashboard();
-    const s = data?.summary || {};
+    const s = (data as any)?.summary || {};
     const sent = s.sent || s.total_messages || 0;
     const delivered = s.delivered || 0;
     const read = s.read || 0;
@@ -43,3 +48,4 @@ export const getTemplateOverview = async () => {
   const response = await api.get("/api/dashboard/template-overview");
   return response.data;
 };
+

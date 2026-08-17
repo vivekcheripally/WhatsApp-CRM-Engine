@@ -232,7 +232,7 @@ class User(Base):
     full_name = Column(String(255), nullable=True)
     role = Column(SQLEnum(UserRole), nullable=False, index=True)
     status = Column(SQLEnum(UserStatus), default=UserStatus.ACTIVE, nullable=False)
-    must_change_password = Column(Boolean, default=True, nullable=False)
+    must_change_password = Column(Boolean, default=False, nullable=False)
     last_login_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

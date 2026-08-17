@@ -14,18 +14,26 @@ interface QuickActionsDrawerProps {
   onConversationReady: (id: string) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  initialTab?: "send" | "campaign" | "schedule";
 }
 
 export function QuickActionsDrawer({
   onConversationReady,
   open: externalOpen,
   onOpenChange: externalOnOpenChange,
+  initialTab = "send",
 }: QuickActionsDrawerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = externalOnOpenChange || setInternalOpen;
 
-  const [activeTab, setActiveTab] = useState<"send" | "campaign" | "schedule">("send");
+  const [activeTab, setActiveTab] = useState<"send" | "campaign" | "schedule">(initialTab);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
 
   // Send Message State
   const [contacts, setContacts] = useState<{ id: string | number; name: string; phone_number: string }[]>([]);
@@ -138,12 +146,8 @@ export function QuickActionsDrawer({
       if (result?.success === false) {
         setCampaignStatus(`Error: ${result.error || "Failed to run campaign"}`);
       } else {
-        const count = result?.recipient_count ?? 0;
-        setCampaignStatus(
-          count > 0
-            ? `Campaign dispatch started for ${count} contact${count !== 1 ? "s" : ""}`
-            : "Campaign dispatch started"
-        );
+        const sent = result?.sent ?? result?.recipient_count ?? result?.message_count ?? 0;
+        setCampaignStatus(`Successfully sent to ${sent} contact${sent !== 1 ? "s" : ""}`);
         setSelectedCampaign("");
       }
     } catch {
@@ -159,17 +163,20 @@ export function QuickActionsDrawer({
     setScheduleStatus(null);
     try {
       const contact = contacts.find((c) => String(c.id) === scheduleContact);
-      await api.post("/api/whatsapp/schedule", {
-        to: contact?.phone_number,
+      if (!contact) return;
+      await api.post("/api/scheduled-messages", {
+        customer_phone: contact.phone_number,
+        customer_name: contact.name,
         template_name: scheduleTemplate,
-        scheduled_at: scheduledTime,
+        message_type: "TEMPLATE",
+        scheduled_at: new Date(scheduledTime).toISOString(),
       });
       setScheduleStatus("Message scheduled successfully!");
       setScheduleContact("");
       setScheduleTemplate("");
       setScheduledTime("");
     } catch (e: any) {
-      setScheduleStatus(`Error: ${e?.message || "Failed to schedule."}`);
+      setScheduleStatus(`Error: ${e?.response?.data?.detail || e?.message || "Failed to schedule."}`);
     } finally {
       setScheduleLoading(false);
     }
@@ -191,13 +198,17 @@ export function QuickActionsDrawer({
       )}
 
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity" />
-        <Dialog.Content className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col border-l border-[#ece9f8]">
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg bg-white rounded-2xl shadow-2xl flex flex-col border border-[#ece9f8] overflow-hidden max-h-[85vh]">
           <div className="flex items-center justify-between px-6 py-4 border-b border-[#ece9f8]" style={{ background: "#f8f7fd" }}>
             <div className="flex items-center gap-2">
-              <Rocket className="w-5 h-5 text-purple-600" />
+              {activeTab === "send" && <Send className="w-5 h-5 text-purple-600" />}
+              {activeTab === "campaign" && <Rocket className="w-5 h-5 text-purple-600" />}
+              {activeTab === "schedule" && <Calendar className="w-5 h-5 text-purple-600" />}
               <Dialog.Title className="font-bold text-base text-slate-900">
-                Quick Actions Workspace
+                {activeTab === "send" && "Send Quick Message"}
+                {activeTab === "campaign" && "Run Campaign"}
+                {activeTab === "schedule" && "Schedule Message"}
               </Dialog.Title>
             </div>
             <Dialog.Close asChild>
@@ -205,43 +216,6 @@ export function QuickActionsDrawer({
                 <X className="w-5 h-5" />
               </button>
             </Dialog.Close>
-          </div>
-
-          {/* Navigation Tabs */}
-          <div className="flex border-b border-[#ece9f8] px-6 bg-white gap-4">
-            <button
-              onClick={() => setActiveTab("send")}
-              className={`py-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
-                activeTab === "send"
-                  ? "border-purple-600 text-purple-600"
-                  : "border-transparent text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              <Send className="w-3.5 h-3.5" />
-              Send Message
-            </button>
-            <button
-              onClick={() => setActiveTab("campaign")}
-              className={`py-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
-                activeTab === "campaign"
-                  ? "border-purple-600 text-purple-600"
-                  : "border-transparent text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              <Rocket className="w-3.5 h-3.5" />
-              Run Campaign
-            </button>
-            <button
-              onClick={() => setActiveTab("schedule")}
-              className={`py-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
-                activeTab === "schedule"
-                  ? "border-purple-600 text-purple-600"
-                  : "border-transparent text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              Schedule Message
-            </button>
           </div>
 
           {/* Tab Contents */}

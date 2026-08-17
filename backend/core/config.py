@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
     PUBLIC_BASE_URL: Optional[str] = None  # e.g. https://your-ngrok-subdomain.ngrok-free.app
-
+    FRONTEND_URL: str = "http://localhost:3000"
 
     # ─── Authentication / JWT & Cookie ────────────────────────────────────
     JWT_SECRET_KEY: str = ""
@@ -86,6 +86,15 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ]
+    
+    # ─── SMTP / Email ────────────────────────────────────────────────────────
+    SMTP_HOST: Optional[str] = None
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    SMTP_FROM_EMAIL: Optional[str] = None
+    SMTP_FROM_NAME: str = "Nexora"
+    SMTP_USE_TLS: bool = True
 
     # ─── Scheduler ─────────────────────────────────────────────────────────
     ENABLE_SCHEDULER: bool = False

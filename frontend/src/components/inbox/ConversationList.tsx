@@ -82,7 +82,7 @@ export function ConversationList() {
 
       {/* ── Header ── */}
       <div
-        className="px-5 pt-5 pb-3 flex-shrink-0"
+        className="px-5 pt-5 pb-3 flex-shrink-0 bg-white"
         style={{ borderBottom: "1px solid #f0f1f5" }}
       >
         <div className="flex items-center justify-between mb-4">

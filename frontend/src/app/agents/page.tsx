@@ -18,6 +18,8 @@ import {
   Filter,
   Edit3,
   Trash2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useAgents } from "@/hooks/use-agents";
 import { useWabaContext } from "@/context/WabaContext";
@@ -63,11 +65,13 @@ export default function AgentsPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [onboardLoading, setOnboardLoading] = useState(false);
 
   // Edit Agent Form States
   const [editFullName, setEditFullName] = useState("");
   const [editPassword, setEditPassword] = useState("");
+  const [showEditPassword, setShowEditPassword] = useState(false);
   const [editStatus, setEditStatus] = useState("ACTIVE");
   const [editLoading, setEditLoading] = useState(false);
 
@@ -115,6 +119,7 @@ export default function AgentsPage() {
       setFullName("");
       setEmail("");
       setPassword("");
+      setShowPassword(false);
       refetch();
     } catch (err: any) {
       alert(formatError(err, "Failed to onboard Sales Agent"));
@@ -482,7 +487,7 @@ export default function AgentsPage() {
         </div>
 
         {/* ── Onboard Agent Modal ── */}
-        <Dialog.Root open={showOnboardModal} onOpenChange={setShowOnboardModal}>
+        <Dialog.Root open={showOnboardModal} onOpenChange={(open) => { setShowOnboardModal(open); if (!open) setShowPassword(false); }}>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 z-40" style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)" }} />
             <Dialog.Content
@@ -530,15 +535,31 @@ export default function AgentsPage() {
 
                 <div>
                   <label className="block text-xs font-semibold mb-1" style={{ color: "#4b4f6b" }}>Initial Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••••••"
-                    className="w-full px-3.5 py-2.5 text-sm rounded-xl focus:outline-none"
-                    style={{ background: "#f5f6fa", border: "1.5px solid #e8eaf0", color: "#1a1d23" }}
-                  />
+                  <div className="relative flex items-center">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                      className="w-full px-3.5 py-2.5 pr-10 text-sm rounded-xl focus:outline-none"
+                      style={{ background: "#f5f6fa", border: "1.5px solid #e8eaf0", color: "#1a1d23" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 p-1 rounded-lg hover:bg-slate-200/70 transition-colors flex items-center justify-center cursor-pointer"
+                      style={{ color: "#6b7280" }}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="pt-4 flex justify-end gap-3 border-t" style={{ borderColor: "#ece9f8" }}>
@@ -565,7 +586,7 @@ export default function AgentsPage() {
         </Dialog.Root>
 
         {/* ── Edit Sales Agent Modal ── */}
-        <Dialog.Root open={!!editingAgent} onOpenChange={(open) => !open && setEditingAgent(null)}>
+        <Dialog.Root open={!!editingAgent} onOpenChange={(open) => { if (!open) { setEditingAgent(null); setShowEditPassword(false); } }}>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 z-40" style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)" }} />
             <Dialog.Content
@@ -617,15 +638,31 @@ export default function AgentsPage() {
                   <label className="block text-xs font-semibold uppercase mb-1" style={{ color: "#4b4f6b" }}>
                     Reset Password (Optional)
                   </label>
-                  <input
-                    type="password"
-                    value={editPassword}
-                    onChange={(e) => setEditPassword(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
-                    style={{ borderColor: "#ece9f8", background: "#fdfcfe" }}
-                    placeholder="Leave blank to keep current password"
-                    minLength={6}
-                  />
+                  <div className="relative flex items-center">
+                    <input
+                      type={showEditPassword ? "text" : "password"}
+                      value={editPassword}
+                      onChange={(e) => setEditPassword(e.target.value)}
+                      className="w-full px-3.5 py-2.5 pr-10 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                      style={{ borderColor: "#ece9f8", background: "#fdfcfe" }}
+                      placeholder="Leave blank to keep current password"
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowEditPassword(!showEditPassword)}
+                      className="absolute right-2.5 p-1 rounded-lg hover:bg-slate-200/70 transition-colors flex items-center justify-center cursor-pointer"
+                      style={{ color: "#6b7280" }}
+                      aria-label={showEditPassword ? "Hide password" : "Show password"}
+                      tabIndex={-1}
+                    >
+                      {showEditPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div>

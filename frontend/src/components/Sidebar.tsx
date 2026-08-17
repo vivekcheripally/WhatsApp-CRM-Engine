@@ -67,9 +67,13 @@ const ActivityIcon = () => (
 
 const SalesAgentsIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-    <path d="M12 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3z" stroke="currentColor" strokeWidth="1.4"/>
-    <path d="M6 9c1.38 0 2.5-1.12 2.5-2.5S7.38 4 6 4 3.5 5.12 3.5 6.5 4.62 9 6 9z" stroke="currentColor" strokeWidth="1.4"/>
-    <path d="M12 13c-2.33 0-7 1.17-7 3.5V18h14v-1.5c0-2.33-4.67-3.5-7-3.5z" stroke="currentColor" strokeWidth="1.4"/>
+    <circle cx="9" cy="5" r="3.2" stroke="currentColor" strokeWidth="1.5" />
+    <path
+      d="M2.5 16.5c0-3.2 2.9-5.5 6.5-5.5s6.5 2.3 6.5 5.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
@@ -95,6 +99,7 @@ const iconMap: Record<string, () => React.ReactNode> = {
   "WhatsApp":    WhatsAppIcon,
   "Reports":     ReportsIcon,
   "Activity":    ActivityIcon,
+  "SalesAgents": SalesAgentsIcon,
   "Sales Agents": SalesAgentsIcon,
   "Settings":    SettingsIcon,
 };
@@ -124,8 +129,8 @@ export default function Sidebar() {
             }}
           />
           <div>
-            <p className="font-bold text-[15px] leading-tight" style={{ color: "#1a1040" }}>FastSales</p>
-            <p className="text-[11px]" style={{ color: "#9390b5" }}>WhatsApp CRM</p>
+            <p className="font-black text-[16px] tracking-wider leading-tight uppercase" style={{ color: "#1a1040" }}>NEXORA</p>
+            <p className="text-[11px] font-semibold" style={{ color: "#9390b5" }}>WhatsApp CRM</p>
           </div>
         </div>
       </div>
@@ -175,10 +180,10 @@ export default function Sidebar() {
                 {/* Badge */}
                 {(m.badge || isWhatsApp) && (
                   <span
-                    className="flex items-center justify-center text-[10px] font-bold rounded-full px-2 py-0.5"
+                    className="flex items-center justify-center text-[10px] font-bold rounded-full px-2 py-0.5 shadow-sm"
                     style={{
-                      background: active ? "rgba(255,255,255,0.25)" : "linear-gradient(135deg,#7c3aed,#4f46e5)",
-                      color: "#fff",
+                      background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                      color: "#ffffff",
                       letterSpacing: "0.03em",
                     }}
                   >

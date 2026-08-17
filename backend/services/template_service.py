@@ -549,35 +549,136 @@ class TemplateService:
             "message": f"Approval status: {st_val}",
         }
 
-    def get_recent_activities(self, org_id: Optional[uuid.UUID] = None, limit: int = 5, waba_account_id: Optional[uuid.UUID] = None) -> list[dict]:
+    def get_recent_activities(self, org_id: Optional[uuid.UUID] = None, limit: int = 50, waba_account_id: Optional[uuid.UUID] = None) -> list[dict]:
         from sqlalchemy import func, or_
-        q = self.db.query(Template)
+        from models.postgres_model import Campaign, Contact, WhatsAppMessage, Template
+
+        activities = []
+
+        # 1. Fetch Templates
+        q_tpl = self.db.query(Template)
         if org_id:
-            q = q.filter(Template.organization_id == org_id)
+            q_tpl = q_tpl.filter(Template.organization_id == org_id)
         if waba_account_id:
-            q = q.filter(
+            q_tpl = q_tpl.filter(
                 or_(
                     Template.whatsapp_account_id == waba_account_id,
                     Template.whatsapp_account_id.is_(None)
                 )
             )
-        templates = q.order_by(
+        templates = q_tpl.order_by(
             func.coalesce(Template.meta_updated_at, Template.updated_at, Template.created_at).desc()
         ).limit(limit).all()
-        activities = []
         for t in templates:
             st_val = t.status.value if hasattr(t.status, "value") else str(t.status)
-            ts = (t.updated_at or t.created_at)
+            ts = t.updated_at or t.created_at
             ts_str = ts.isoformat() if ts else None
             activities.append({
-                "id": str(t.id),
+                "id": f"tpl_{t.id}",
+                "type": "template",
                 "template_name": t.template_name,
+                "subtitle": t.template_name,
                 "status": st_val,
                 "action": "updated" if t.updated_at else "created",
                 "created_at": ts_str,
                 "timestamp": ts_str,
             })
-        return activities
+                # 2. Fetch Campaigns
+        try:
+            q_cmp = self.db.query(Campaign).filter(Campaign.is_deleted == False)
+            if org_id:
+                q_cmp = q_cmp.filter(Campaign.organization_id == org_id)
+            if waba_account_id:
+                q_cmp = q_cmp.filter(Campaign.whatsapp_account_id == waba_account_id)
+            campaigns = q_cmp.order_by(
+                func.coalesce(Campaign.updated_at, Campaign.created_at).desc()
+            ).limit(limit).all()
+
+            for c in campaigns:
+                st_val = c.status.value if hasattr(c.status, "value") else str(c.status)
+                ts = c.updated_at or c.created_at
+                ts_str = ts.isoformat() if ts else None
+                activities.append({
+                    "id": f"cmp_{c.id}",
+                    "type": "campaign",
+                    "title": f"Campaign {st_val.title()}",
+                    "subtitle": c.campaign_name,
+                    "description": f"Recipients: {c.total_recipients or 0} (Sent: {c.sent_count or 0}, Delivered: {c.delivered_count or 0})",
+                    "status": st_val,
+                    "action": "updated" if c.updated_at else "created",
+                    "created_at": ts_str,
+                    "timestamp": ts_str,
+                })
+        except Exception:
+            pass
+
+        # 3. Fetch Contacts
+        try:
+            q_cnt = self.db.query(Contact).filter(Contact.is_deleted == False)
+            if org_id:
+                q_cnt = q_cnt.filter(Contact.organization_id == org_id)
+            contacts = q_cnt.order_by(
+                func.coalesce(Contact.updated_at, Contact.created_at).desc()
+            ).limit(limit).all()
+
+            for cnt in contacts:
+                st_val = cnt.status.value if hasattr(cnt.status, "value") else str(cnt.status)
+                ts = cnt.updated_at or cnt.created_at
+                ts_str = ts.isoformat() if ts else None
+                display_name = cnt.name or cnt.phone_number or "Contact"
+                activities.append({
+                    "id": f"cnt_{cnt.id}",
+                    "type": "contact",
+                    "title": "Contact Added",
+                    "subtitle": display_name,
+                    "description": f"Phone: {cnt.phone_number} (Source: {cnt.source or 'MANUAL'})",
+                    "status": st_val,
+                    "action": "created",
+                    "created_at": ts_str,
+                    "timestamp": ts_str,
+                })
+        except Exception:
+            pass
+
+        # 4. Fetch WhatsApp Messages
+        try:
+            q_msg = self.db.query(WhatsAppMessage).filter(WhatsAppMessage.is_deleted == False)
+            if org_id:
+                q_msg = q_msg.filter(WhatsAppMessage.organization_id == org_id)
+            if waba_account_id:
+                q_msg = q_msg.filter(WhatsAppMessage.whatsapp_account_id == waba_account_id)
+            messages = q_msg.order_by(
+                func.coalesce(WhatsAppMessage.created_at, WhatsAppMessage.updated_at).desc()
+            ).limit(limit).all()
+
+            for m in messages:
+                st_val = m.status.value if hasattr(m.status, "value") else str(m.status)
+                ts = m.created_at or m.updated_at
+                ts_str = ts.isoformat() if ts else None
+                msg_type_str = m.message_type.value if hasattr(m.message_type, "value") else str(m.message_type or "")
+                msg_snippet = (m.content or m.caption or f"{msg_type_str} message")[:60]
+                activities.append({
+                    "id": f"msg_{m.id}",
+                    "type": "message",
+                    "title": f"Message {st_val.title()}",
+                    "subtitle": m.sender_id or "WhatsApp Message",
+                    "description": msg_snippet,
+                    "status": st_val,
+                    "action": "sent" if m.direction and str(hasattr(m.direction, "value") and m.direction.value or m.direction).upper() == "OUTBOUND" else "received",
+                    "created_at": ts_str,
+                    "timestamp": ts_str,
+                })
+        except Exception:
+            pass
+
+        # Sort combined list by timestamp descending
+        def get_ts(item):
+            ts = item.get("created_at") or item.get("timestamp")
+            return ts if ts else ""
+
+        activities.sort(key=get_ts, reverse=True)
+        return activities[:limit]
+
 
     def resubmit_template_by_id(self, template_id: uuid.UUID) -> dict:
         template = self.db.query(Template).filter(Template.id == template_id).first()

@@ -24,7 +24,7 @@ def create_message(
     db: Session = Depends(get_db),
 ):
     svc = MessageService(db)
-    agent_id = user.get("id", 1)
+    agent_id = user.get("id") or user.get("sub")
     try:
         return svc.send_message(payload, agent_id=agent_id)
     except ResourceNotFoundError as e:
@@ -45,7 +45,7 @@ async def send_media_upload(
     db: Session = Depends(get_db),
 ):
     svc = MessageService(db)
-    agent_id = user.get("id", 1)
+    agent_id = user.get("id") or user.get("sub")
     file_bytes = await file.read()
     filename = file.filename or "upload"
     mime_type = file.content_type or "application/octet-stream"
@@ -79,7 +79,7 @@ def add_reaction(
     return svc.add_reaction_dto(
         message_id=uuid.UUID(message_id),
         emoji=payload.emoji,
-        customer_phone=str(payload.customer_phone or "agent"),
+        customer_phone=payload.customer_phone or "agent",
     )
 
 

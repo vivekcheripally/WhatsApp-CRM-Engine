@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from core.database import get_db
 from core.security import decode_access_token
-from models.postgres_model import User, UserRole, UserStatus
+from models.postgres_model import User, UserRole, UserStatus, Organization, OrganizationStatus
 
 security_scheme = HTTPBearer(auto_error=False)
 
@@ -95,7 +95,7 @@ def get_current_user(
             "email": user.email,
             "role": role_str,
             "organization_id": str(user.organization_id) if user.organization_id else None,
-            "must_change_password": bool(user.must_change_password),
+            "must_change_password": getattr(user, "must_change_password", False),
             "sid": sid,
         }
     except HTTPException:
@@ -110,7 +110,7 @@ def get_current_user(
 
 def require_permission(required_permission: Permission):
     def permission_checker(current_user: dict = Depends(get_current_user)) -> dict:
-        user_role = current_user.get("role")
+        user_role = str(current_user.get("role") or "")
         user_permissions = ROLE_PERMISSIONS.get(user_role, set())
         if required_permission not in user_permissions:
             raise HTTPException(

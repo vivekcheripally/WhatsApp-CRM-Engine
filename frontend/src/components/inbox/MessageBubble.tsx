@@ -31,17 +31,17 @@ interface MessageBubbleProps {
 export function DeliveryIcon({ status }: { status: string }) {
   switch (status) {
     case "PENDING":
-      return <Clock className="h-3 w-3" style={{ color: "rgba(255,255,255,0.6)" }} />;
+      return <Clock className="h-3 w-3" style={{ color: "#667781" }} />;
     case "SENT":
-      return <Check className="h-3 w-3" style={{ color: "rgba(255,255,255,0.7)" }} />;
+      return <Check className="h-3 w-3" style={{ color: "#667781" }} />;
     case "DELIVERED":
-      return <CheckCheck className="h-3 w-3" style={{ color: "rgba(255,255,255,0.7)" }} />;
+      return <CheckCheck className="h-3 w-3" style={{ color: "#667781" }} />;
     case "READ":
       // Blue ticks — same as real WhatsApp
       return (
         <CheckCheck
           className="h-3.5 w-3.5"
-          style={{ color: "#53bdeb", filter: "drop-shadow(0 0 2px rgba(83,189,235,0.5))" }}
+          style={{ color: "#53bdeb" }}
         />
       );
     case "FAILED":
@@ -313,29 +313,31 @@ export function MessageBubble({
               (message.message_type === "DOCUMENT" || message.message_type === "AUDIO" || message.message_type === "VIDEO" || message.message_type === "IMAGE")
                 && !message.content && (message.media_files ?? []).length > 0
                 ? "overflow-hidden"
-                : "px-4 py-2.5",
-              isAgent ? "rounded-2xl rounded-br-sm" : "rounded-2xl rounded-bl-sm",
+                : "px-3.5 py-2",
+              isAgent ? "rounded-lg rounded-tr-none" : "rounded-lg rounded-tl-none",
               highlight && !isCurrentMatch && "ring-2 ring-yellow-300"
             )}
             style={{
               background: isAgent
-                ? "linear-gradient(135deg, #7c3aed, #4f46e5)"
+                ? "#d9fdd3"
                 : "#ffffff",
-              boxShadow: isAgent
-                ? "0 2px 12px rgba(124,58,237,0.25)"
-                : "0 1px 4px rgba(0,0,0,0.08)",
+              boxShadow: "0 1px 0.5px rgba(11,20,26,0.13)",
             }}
           >
-            {/* Tail */}
-            <span className={cn("absolute bottom-0 w-3.5 h-3.5 overflow-hidden", isAgent ? "-right-2" : "-left-2")}>
-              <svg viewBox="0 0 10 10" className="w-3.5 h-3.5" style={{ fill: isAgent ? "#dcf8c6" : "#ffffff" }}>
-                {isAgent ? <path d="M10 10 L0 10 L10 0 Z" /> : <path d="M0 10 L10 10 L0 0 Z" />}
+            {/* Top Tail (Official WhatsApp Web Tail) */}
+            {isAgent ? (
+              <svg viewBox="0 0 8 13" className="w-2 h-3 absolute top-0 -right-2 text-[#d9fdd3] fill-current">
+                <path d="M6.467 3.568L0 12.193V0h5.188c1.77 0 2.338 1.573 1.279 3.568z" />
               </svg>
-            </span>
+            ) : (
+              <svg viewBox="0 0 8 13" className="w-2 h-3 absolute top-0 -left-2 text-white fill-current">
+                <path d="M1.533 3.568L8 12.193V0H2.812C1.042 0 .474 1.573 1.533 3.568z" />
+              </svg>
+            )}
 
             {/* Forwarded label */}
             {(message as any).is_forwarded && (
-              <div className="flex items-center gap-1 text-[10px] mb-1 italic" style={{ color: isAgent ? "rgba(255,255,255,0.6)" : "#9498b0" }}>
+              <div className="flex items-center gap-1 text-[10px] mb-1 italic" style={{ color: "#667781" }}>
                 <Forward className="h-3 w-3" /> Forwarded
               </div>
             )}
@@ -343,11 +345,11 @@ export function MessageBubble({
             {/* Reply preview */}
             {replySource && (
               <div className="mb-2 pl-3 rounded-lg text-xs py-1.5 pr-2"
-                style={{ borderLeft: `3px solid ${isAgent ? "rgba(255,255,255,0.5)" : "#7c3aed"}`, background: isAgent ? "rgba(255,255,255,0.15)" : "#f0eeff" }}>
-                <p className="font-semibold mb-0.5" style={{ color: isAgent ? "rgba(255,255,255,0.85)" : "#7c3aed", fontSize: "11px" }}>
+                style={{ borderLeft: "3px solid #008069", background: isAgent ? "#c6f0be" : "#f0f2f5" }}>
+                <p className="font-semibold mb-0.5" style={{ color: "#008069", fontSize: "11px" }}>
                   {replySource.sender_type === "AGENT" ? "You" : "Customer"}
                 </p>
-                <p className="truncate" style={{ color: isAgent ? "rgba(255,255,255,0.65)" : "#6b7280" }}>
+                <p className="truncate" style={{ color: "#111b21" }}>
                   {replySource.content ?? "📎 Media"}
                 </p>
               </div>
@@ -362,26 +364,26 @@ export function MessageBubble({
 
             {/* Text / Location / Contact */}
             {message.is_deleted ? (
-              <span className="italic text-sm flex items-center gap-1" style={{ color: isAgent ? "rgba(255,255,255,0.5)" : "#b0b3c6" }}>
+              <span className="italic text-sm flex items-center gap-1" style={{ color: "#667781" }}>
                 <XCircle className="h-3.5 w-3.5" /> This message was deleted
               </span>
             ) : message.message_type === "LOCATION" && message.content ? (
               <LocationBubble content={message.content} isAgent={isAgent} />
             ) : message.content ? (
               <p className="text-sm whitespace-pre-wrap break-words leading-relaxed pr-10"
-                style={{ color: isAgent ? "#ffffff" : "#1a1d23" }}>
+                style={{ color: "#111b21" }}>
                 {message.content}
               </p>
             ) : (message.media_files ?? []).length === 0 && !["IMAGE", "DOCUMENT", "VIDEO", "AUDIO", "STICKER"].includes(message.message_type) ? (
               <p className="text-sm whitespace-pre-wrap break-words leading-relaxed pr-10"
-                style={{ color: isAgent ? "#ffffff" : "#1a1d23" }}>
+                style={{ color: "#111b21" }}>
                 {`[${(message.message_type || "message").toLowerCase()}]`}
               </p>
             ) : null}
 
             {/* Caption */}
             {message.caption && (
-              <p className="text-xs mt-1" style={{ color: isAgent ? "rgba(255,255,255,0.7)" : "#9498b0" }}>
+              <p className="text-xs mt-1" style={{ color: "#667781" }}>
                 {message.caption}
               </p>
             )}
@@ -390,7 +392,7 @@ export function MessageBubble({
             <div className="flex items-center gap-1 justify-end mt-1">
               {starred && <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />}
               <span className="text-[10px] whitespace-nowrap"
-                style={{ color: isAgent ? "rgba(255,255,255,0.55)" : "#b0b3c6" }}>
+                style={{ color: "#667781" }}>
                 {formatMessageTime(message.created_at)}
               </span>
               {/* Only show delivery ticks for agent messages */}

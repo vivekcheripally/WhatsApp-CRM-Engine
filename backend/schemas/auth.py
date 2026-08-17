@@ -30,7 +30,7 @@ class ForceChangePasswordRequest(BaseModel):
 
 
 class ChangePasswordRequest(BaseModel):
-    old_password: str
+    current_password: Optional[str] = None
+    old_password: Optional[str] = None
     new_password: str
-    confirm_password: str
-
+    confirm_password: Optional[str] = None

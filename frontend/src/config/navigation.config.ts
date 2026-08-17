@@ -56,13 +56,6 @@ export const navigationConfig: MenuItemConfig[] = [
     permissions: ["CAMPAIGN_READ"],
   },
   {
-    title: "Activity",
-    href: "/activity",
-    iconName: "Activity",
-    roles: ["ORG_ADMIN"],
-    permissions: ["CAMPAIGN_READ"],
-  },
-  {
     title: "Sales Agents",
     href: "/agents",
     iconName: "SalesAgents",

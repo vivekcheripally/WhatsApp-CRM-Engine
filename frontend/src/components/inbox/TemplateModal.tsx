@@ -170,15 +170,18 @@ export function TemplateModal({ conversationId, onSent, onClose }: TemplateModal
             ) : (
               <div className="relative">
                 <select
-                  value={selectedId ?? ""}
-                  onChange={(e) => handleSelectTemplate(Number(e.target.value))}
+                  value={selectedId !== null && selectedId !== undefined && !Number.isNaN(Number(selectedId)) ? String(selectedId) : ""}
+                  onChange={(e) => {
+                    const parsed = Number(e.target.value);
+                    if (!Number.isNaN(parsed)) handleSelectTemplate(parsed);
+                  }}
                   className="appearance-none focus:outline-none pr-9"
                   style={{ ...inputCls, cursor: "pointer" }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = "#7c3aed44")}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = "#008069")}
                   onBlur={(e) => (e.currentTarget.style.borderColor = "#e8eaf0")}
                 >
                   {templates.map((t) => (
-                    <option key={t.id} value={t.id}>
+                    <option key={t.id} value={String(t.id)}>
                       {t.template_name}
                     </option>
                   ))}
@@ -229,8 +232,8 @@ export function TemplateModal({ conversationId, onSent, onClose }: TemplateModal
                 <button
                   type="button"
                   onClick={() => setShowPreview((v) => !v)}
-                  className="flex items-center gap-1 text-xs"
-                  style={{ color: "#7c3aed" }}
+                  className="flex items-center gap-1 text-xs font-medium"
+                  style={{ color: "#008069" }}
                 >
                   <Eye className="h-3 w-3" />
                   {showPreview ? "Hide" : "Show"}
@@ -240,13 +243,14 @@ export function TemplateModal({ conversationId, onSent, onClose }: TemplateModal
                 <div
                   className="rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap break-words leading-relaxed"
                   style={{
-                    background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
-                    color: "#ffffff",
-                    boxShadow: "0 2px 12px rgba(124,58,237,0.2)",
+                    background: "#d9fdd3",
+                    color: "#111b21",
+                    borderLeft: "3px solid #008069",
+                    boxShadow: "0 1px 0.5px rgba(11,20,26,0.13)",
                   }}
                 >
                   {preview || (
-                    <span style={{ color: "rgba(255,255,255,0.5)" }}>
+                    <span style={{ color: "#667781" }}>
                       {selected.template_body}
                     </span>
                   )}
@@ -264,7 +268,7 @@ export function TemplateModal({ conversationId, onSent, onClose }: TemplateModal
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors"
+            className="flex-1 py-2.5 rounded-full text-sm font-medium transition-colors"
             style={{ background: "#f5f6fa", color: "#4b4f6b", border: "1px solid #e8eaf0" }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#e8eaf0")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "#f5f6fa")}
@@ -275,10 +279,9 @@ export function TemplateModal({ conversationId, onSent, onClose }: TemplateModal
             type="button"
             onClick={handleSend}
             disabled={!selected || isPending}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-full text-sm font-semibold text-white transition-all disabled:opacity-60"
             style={{
-              background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
-              boxShadow: "0 4px 14px rgba(124,58,237,0.35)",
+              background: "#008069",
             }}
           >
             {isPending ? (

@@ -153,10 +153,10 @@ export default function ContactsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard icon={Users}        title="Total Contacts" value={total}      delta="18.4% this month" color="#7c3aed" bg="rgba(124,58,237,0.10)" />
-        <StatCard icon={CheckCircle}  title="Active"         value={active}     delta="16.7% this month" color="#10b981" bg="rgba(16,185,129,0.10)" />
-        <StatCard icon={CalendarDays} title="This Month"     value={thisMonth}  delta="12.1% this month" color="#06b6d4" bg="rgba(6,182,212,0.10)"  />
-        <StatCard icon={Users}        title="Total"          value={total}      color="#f59e0b"           bg="rgba(245,158,11,0.10)" />
+        <StatCard icon={Users}        title="Total Contacts" value={total}      color="#7c3aed" bg="rgba(124,58,237,0.10)" />
+        <StatCard icon={CheckCircle}  title="Active"         value={active}     color="#10b981" bg="rgba(16,185,129,0.10)" />
+        <StatCard icon={CalendarDays} title="This Month"     value={thisMonth}  color="#06b6d4" bg="rgba(6,182,212,0.10)"  />
+        <StatCard icon={Users}        title="Total"          value={total}      color="#f59e0b" bg="rgba(245,158,11,0.10)" />
       </div>
 
       {/* Table */}
@@ -371,12 +371,19 @@ export default function ContactsPage() {
       </Dialog.Root>
 
       {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(26,16,64,0.4)", backdropFilter: "blur(6px)" }}>
-          <div className="w-full max-w-md rounded-2xl p-6 space-y-4" style={{ background: "#fff", border: "1px solid #ece9f8", boxShadow: "0 20px 60px rgba(100,80,200,0.15)" }}>
+      <Dialog.Root open={showModal} onOpenChange={setShowModal}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md rounded-2xl p-6 space-y-4 bg-white border border-[#ece9f8] shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold" style={{ color: "#1a1040" }}>{editingIndex !== null ? "Edit Contact" : "Add Contact"}</h2>
-              <button onClick={() => setShowModal(false)} style={{ color: "#9390b5" }}><X size={18} /></button>
+              <Dialog.Title className="text-lg font-bold text-[#1a1040]">
+                {editingIndex !== null ? "Edit Contact" : "Add Contact"}
+              </Dialog.Title>
+              <Dialog.Close asChild>
+                <button type="button" className="p-1 rounded-lg text-[#9390b5] hover:bg-slate-100 transition-colors">
+                  <X size={18} />
+                </button>
+              </Dialog.Close>
             </div>
             {[{ ph: "Full Name", key: "name", type: "text" }, { ph: "919876543210 (no + or spaces)", key: "phone", type: "text" }, { ph: "Email Address", key: "email", type: "email" }].map(({ ph, key, type }) => (
               <input key={key} type={type} placeholder={ph} value={(newContact as any)[key]}
@@ -388,36 +395,41 @@ export default function ContactsPage() {
               <option>Active</option><option>Inactive</option>
             </select>
             <div className="flex justify-end gap-3 pt-1">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2.5 rounded-xl text-sm font-medium"
+              <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2.5 rounded-xl text-sm font-medium"
                 style={{ background: "#f5f4fb", color: "#9390b5", border: "1px solid #e0ddf5" }}>Cancel</button>
-              <button onClick={handleSave} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+              <button type="button" onClick={handleSave} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
                 style={{ background: "linear-gradient(90deg,#7c3aed,#4f46e5)", boxShadow: "0 4px 14px rgba(124,58,237,0.3)" }}>Save</button>
             </div>
-          </div>
-        </div>
-      )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       {/* View Modal */}
-      {viewContact && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(26,16,64,0.4)", backdropFilter: "blur(6px)" }}>
-          <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: "#fff", border: "1px solid #ece9f8", boxShadow: "0 20px 60px rgba(100,80,200,0.15)" }}>
+      <Dialog.Root open={!!viewContact} onOpenChange={(open) => { if (!open) setViewContact(null); }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-sm rounded-2xl p-6 bg-white border border-[#ece9f8] shadow-2xl">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold" style={{ color: "#1a1040" }}>Contact Details</h2>
-              <button onClick={() => setViewContact(null)} style={{ color: "#9390b5" }}><X size={18} /></button>
+              <Dialog.Title className="text-lg font-bold text-[#1a1040]">Contact Details</Dialog.Title>
+              <Dialog.Close asChild>
+                <button type="button" className="p-1 rounded-lg text-[#9390b5] hover:bg-slate-100 transition-colors">
+                  <X size={18} />
+                </button>
+              </Dialog.Close>
             </div>
             <div className="space-y-1">
-              {[["Name", viewContact.name], ["Phone", viewContact.phone], ["Email", viewContact.email || "—"], ["Owner / Agent", viewContact.owner_name], ["Status", viewContact.status]].map(([k, v]) => (
+              {viewContact && [["Name", viewContact.name], ["Phone", viewContact.phone], ["Email", viewContact.email || "—"], ["Owner / Agent", viewContact.owner_name], ["Status", viewContact.status]].map(([k, v]) => (
                 <div key={k} className="flex justify-between py-2.5" style={{ borderBottom: "1px solid #f0eefb" }}>
                   <span className="text-sm" style={{ color: "#9390b5" }}>{k}</span>
                   <span className="text-sm font-semibold" style={{ color: "#1a1040" }}>{v}</span>
                 </div>
               ))}
             </div>
-            <button onClick={() => setViewContact(null)} className="mt-5 w-full py-2.5 rounded-xl text-sm font-medium"
+            <button type="button" onClick={() => setViewContact(null)} className="mt-5 w-full py-2.5 rounded-xl text-sm font-medium"
               style={{ background: "#f5f4fb", color: "#7c3aed", border: "1px solid #e0ddf5" }}>Close</button>
-          </div>
-        </div>
-      )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }

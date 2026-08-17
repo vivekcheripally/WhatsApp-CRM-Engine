@@ -28,8 +28,8 @@ from repositories.channel_assignment_repository import ChannelAssignmentReposito
 from repositories.campaign_assignment_repository import CampaignAssignmentRepository
 
 
-def test_rbac_and_sales_agent_flow():
-    db: Session = SessionLocal()
+def test_rbac_and_sales_agent_flow(db_session: Session):
+    db: Session = db_session
     try:
         # 1. Create Organization
         org = Organization(
@@ -126,7 +126,8 @@ def test_rbac_and_sales_agent_flow():
         print("\nALL RBAC AND SALES AGENT SYSTEM TESTS PASSED PERFECTLY!")
 
     finally:
-        db.close()
+        if db_session is None:
+            db.close()
 
 
 if __name__ == "__main__":

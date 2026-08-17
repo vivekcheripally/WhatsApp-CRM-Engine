@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from typing import Optional
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from core.database import get_db
 from routes.deps import get_current_user
-from schemas.dashboard import UnifiedDashboardResponse
+from schemas.dashboard import AnalyticsReportResponse, UnifiedDashboardResponse
 from services.dashboard_service import DashboardService
 
 router = APIRouter()
@@ -19,6 +20,17 @@ def get_unified_dashboard(
     """Consolidated endpoint returning all dashboard metrics in 1 HTTP call."""
     svc = DashboardService(db)
     return svc.get_unified_dashboard(user.get("org_id"))
+
+
+@router.get("/analytics", response_model=AnalyticsReportResponse)
+def get_analytics_report(
+    time_range: str = Query("7d", alias="range"),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Live analytics reports computed directly from database over selected time range."""
+    svc = DashboardService(db)
+    return svc.get_analytics_report(user.get("org_id"), time_range=time_range)
 
 
 @router.get("/overview")
@@ -42,4 +54,4 @@ def get_campaigns(user: dict = Depends(get_current_user), db: Session = Depends(
 @router.get("/template-overview")
 def template_overview(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     svc = DashboardService(db)
-    return svc.get_unified_dashboard(user.get("org_id")).templates.model_dump()
+    return svc.get_unified_dashboard(user.get("org_id")).templates.model_dump()

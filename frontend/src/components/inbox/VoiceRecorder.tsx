@@ -251,11 +251,10 @@ export function VoiceMicButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-all"
+      className="flex items-center justify-center w-10 h-10 rounded-full shrink-0 transition-all"
       style={{
-        background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
+        background: "#008069",
         color: "#ffffff",
-        boxShadow: "0 4px 14px rgba(124,58,237,0.4)",
       }}
       title="Record voice note"
     >

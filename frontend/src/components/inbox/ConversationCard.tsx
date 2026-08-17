@@ -60,7 +60,7 @@ export function ConversationCard({ conversation, isActive, onClick }: Conversati
     await updateConv({ id: conversation.id, status: newStatus });
   };
 
-  const hasUnread = conversation.unread_count > 0;
+  const hasUnread = (conversation.unread_count ?? 0) > 0;
 
   return (
     <motion.div
@@ -148,7 +148,7 @@ export function ConversationCard({ conversation, isActive, onClick }: Conversati
                 className="flex items-center justify-center min-w-[20px] h-5 rounded-full text-white text-[10px] font-bold px-1.5"
                 style={{ background: "#7c3aed" }}
               >
-                {conversation.unread_count > 99 ? "99+" : conversation.unread_count}
+                {(conversation.unread_count ?? 0) > 99 ? "99+" : conversation.unread_count ?? 0}
               </span>
             )}
           </div>

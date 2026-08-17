@@ -345,18 +345,18 @@ export default function TemplatesPage() {
 
       {/* Create / Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(26,16,64,0.35)", backdropFilter: "blur(6px)" }}>
-          <div className="w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl" style={{ background: "#fff", border: "1px solid #ece9f8" }}>
-            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #ece9f8" }}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-6 pt-16 overflow-y-auto" style={{ background: "rgba(26,16,64,0.4)", backdropFilter: "blur(6px)" }}>
+          <div className="w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl flex flex-col mb-6" style={{ background: "#fff", border: "1px solid #ece9f8", maxHeight: "calc(100vh - 8rem)" }}>
+            <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: "1px solid #ece9f8" }}>
               <h2 className="text-lg font-bold" style={{ color: "#1a1040" }}>
                 {user?.role === "SALES_AGENT" ? "View Template" : (editingId ? "Edit Template" : "Create Template")}
               </h2>
               <button onClick={() => setShowModal(false)} style={{ color: "#9390b5" }}><X size={18} /></button>
             </div>
 
-            <div className="grid grid-cols-2 gap-0 max-h-[75vh] overflow-y-auto">
-              {/* Left — form */}
-              <div className="p-6 space-y-4" style={{ borderRight: "1px solid #ece9f8" }}>
+            <div className="grid grid-cols-2 gap-0 flex-1 min-h-0 overflow-hidden">
+              {/* Left — form (scrolls internally so card never grows) */}
+              <div className="p-6 space-y-3 overflow-y-auto" style={{ borderRight: "1px solid #ece9f8" }}>
                 <div>
                   <span style={labelStyle}>Template Name</span>
                   <input value={templateData.template_name} onChange={e => setTemplateData({ ...templateData, template_name: e.target.value })} placeholder="e.g. order_confirmation" style={inputStyle} className="placeholder:text-[#c0bed8] focus:outline-none" />
@@ -391,7 +391,7 @@ export default function TemplatesPage() {
                   </div>
                 )}
                 <div><span style={labelStyle}>Body Text</span>
-                  <textarea rows={5} placeholder="Type your message..." value={templateData.template_body} onChange={e => setTemplateData({ ...templateData, template_body: e.target.value })}
+                  <textarea rows={4} placeholder="Type your message..." value={templateData.template_body} onChange={e => setTemplateData({ ...templateData, template_body: e.target.value })}
                     style={{ ...inputStyle, resize: "none" }} className="placeholder:text-[#c0bed8] focus:outline-none" />
                 </div>
                 <div><span style={labelStyle}>Footer (optional)</span>
@@ -417,43 +417,138 @@ export default function TemplatesPage() {
                 </div>
               </div>
 
-              {/* Right — preview */}
-              <div className="p-6 space-y-4" style={{ background: "#faf9ff" }}>
-                <span style={labelStyle}>Preview</span>
-                <div className="rounded-2xl overflow-hidden" style={{ background: "#efeae2" }}>
-                  <div className="px-3 py-2 text-xs font-semibold text-white" style={{ background: "#128c7e" }}>WhatsApp Preview</div>
-                  <div className="p-4 min-h-48">
-                    <div className="bg-white rounded-2xl rounded-tl-sm p-3 shadow-sm max-w-xs">
-                      {templateData.header !== "none" && (headerPreviewUrl || templateData.header_url) ? (
-                        templateData.header === "image" ? (
-                          <div className="relative h-28 w-full mb-2 rounded-lg overflow-hidden">
-                            <Image loader={({ src }) => src} src={headerPreviewUrl || templateData.header_url || ""} alt="header" fill className="object-cover" unoptimized />
-                          </div>
-                        ) : templateData.header === "video" ? (
-                          <div className="relative h-28 w-full mb-2 rounded-lg overflow-hidden bg-black flex items-center justify-center">
-                            <video src={headerPreviewUrl || templateData.header_url || ""} controls className="w-full h-full object-cover" />
-                          </div>
-                        ) : <div className="h-12 rounded-lg mb-2 flex items-center justify-center text-xs" style={{ background: "#f0f0f0", color: "#666" }}>[{templateData.header}]</div>
-                      ) : null}
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
-                        {(templateData.template_body || "Your message here…").replace(/\{\{1\}\}/g, "Rahul").replace(/\{\{2\}\}/g, "#12345").replace(/\{\{3\}\}/g, "today")}
-                      </p>
-                      {templateData.footer && <p className="text-xs text-gray-400 border-t mt-2 pt-1">{templateData.footer}</p>}
-                      {templateData.buttons.length > 0 && (
-                        <div className="border-t mt-2 pt-2 space-y-1">
-                          {templateData.buttons.map((btn, i) => (
-                            <div key={i} className="text-center text-xs py-1 rounded" style={{ color: "#128c7e", background: "#f0f0f0" }}>{btn.text || `Button ${i + 1}`}</div>
-                          ))}
+              {/* Right — mobile phone preview */}
+              <div className="flex flex-col items-center p-4 overflow-hidden" style={{ background: "#f0f0f8" }}>
+                <span style={labelStyle} className="self-start mb-3 flex-shrink-0">Preview</span>
+
+                {/* Phone frame — fills remaining height */}
+                <div className="relative flex-1 min-h-0 flex items-center justify-center w-full">
+                  <div className="relative h-full" style={{ aspectRatio: "9/18", maxWidth: "100%" }}>
+                    {/* Phone outer shell */}
+                    <div className="relative h-full rounded-[1.6rem] p-[4px]" style={{
+                      background: "linear-gradient(145deg,#2d2d2d,#1a1a1a)",
+                      boxShadow: "0 0 0 1px #555, 0 16px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08)",
+                    }}>
+                      {/* Side buttons */}
+                      <div className="absolute" style={{ left: "-3px", top: "15%", width: "3px", height: "5%", background: "#3a3a3a", borderRadius: "2px 0 0 2px" }} />
+                      <div className="absolute" style={{ left: "-3px", top: "23%", width: "3px", height: "8%", background: "#3a3a3a", borderRadius: "2px 0 0 2px" }} />
+                      <div className="absolute" style={{ left: "-3px", top: "33%", width: "3px", height: "8%", background: "#3a3a3a", borderRadius: "2px 0 0 2px" }} />
+                      <div className="absolute" style={{ right: "-3px", top: "25%", width: "3px", height: "12%", background: "#3a3a3a", borderRadius: "0 2px 2px 0" }} />
+
+                      {/* Screen */}
+                      <div className="h-full rounded-[1.3rem] overflow-hidden flex flex-col" style={{ background: "#000" }}>
+                        {/* Dynamic island / notch */}
+                        <div className="flex-shrink-0 flex justify-center pt-1.5 pb-0.5" style={{ background: "#075e54" }}>
+                          <div className="rounded-full" style={{ width: "28%", height: "6px", background: "#000" }} />
                         </div>
-                      )}
-                      <p className="text-right text-[10px] text-gray-400 mt-1">11:30 AM ✓✓</p>
+
+                        {/* Status bar */}
+                        <div className="flex-shrink-0 flex items-center justify-between px-3 pb-1" style={{ background: "#075e54" }}>
+                          <span className="font-semibold text-white" style={{ fontSize: "clamp(7px,1.2vw,10px)" }}>9:41</span>
+                          <div className="flex items-center gap-1">
+                            <svg width="10" height="8" viewBox="0 0 10 8" fill="white" opacity="0.9"><rect x="0" y="3" width="2" height="5" rx="0.5"/><rect x="2.5" y="2" width="2" height="6" rx="0.5"/><rect x="5" y="1" width="2" height="7" rx="0.5"/><rect x="7.5" y="0" width="2" height="8" rx="0.5"/></svg>
+                            <svg width="10" height="8" viewBox="0 0 12 9" fill="white" opacity="0.9"><path d="M6 2C4.1 2 2.4 2.7 1.1 3.9L0 2.8C1.6 1.1 3.7 0 6 0s4.4 1.1 6 2.8L10.9 3.9C9.6 2.7 7.9 2 6 2z"/><path d="M6 5c-1 0-1.9.4-2.6 1L2.3 4.9C3.3 4 4.6 3.4 6 3.4s2.7.6 3.7 1.5L8.6 6C7.9 5.4 7 5 6 5z"/><circle cx="6" cy="8" r="1.3"/></svg>
+                            <svg width="14" height="8" viewBox="0 0 14 8" fill="none"><rect x="0.5" y="0.5" width="11" height="7" rx="1.5" stroke="white" strokeOpacity="0.5"/><rect x="1.5" y="1.5" width="8" height="5" rx="1" fill="white"/><path d="M13 3v2a1 1 0 0 0 0-2z" fill="white" fillOpacity="0.4"/></svg>
+                          </div>
+                        </div>
+
+                        {/* Chat header */}
+                        <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1.5" style={{ background: "#075e54" }}>
+                          <div className="rounded-full flex items-center justify-center font-bold text-white flex-shrink-0" style={{ background: "#25d366", width: "clamp(18px,3vw,26px)", height: "clamp(18px,3vw,26px)", fontSize: "clamp(7px,1vw,10px)" }}>R</div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-white leading-tight truncate" style={{ fontSize: "clamp(8px,1.3vw,11px)" }}>Rahul</p>
+                            <p className="leading-tight" style={{ fontSize: "clamp(6px,1vw,9px)", color: "#b2dfdb" }}>online</p>
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="white" opacity="0.9"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="white" opacity="0.9"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="white" opacity="0.9"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                          </div>
+                        </div>
+
+                        {/* Chat body */}
+                        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1.5" style={{ background: "#efeae2" }}>
+                          {/* Date chip */}
+                          <div className="flex justify-center">
+                            <span className="px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.75)", color: "#667781", fontSize: "clamp(6px,0.9vw,8px)" }}>TODAY</span>
+                          </div>
+
+                          {/* Message bubble */}
+                          <div className="flex justify-end">
+                            <div className="rounded-lg rounded-tr-none px-2 py-1.5 relative" style={{ background: "#d9fdd3", boxShadow: "0 1px 2px rgba(0,0,0,0.1)", maxWidth: "85%" }}>
+                              {/* Header media */}
+                              {templateData.header !== "none" && (headerPreviewUrl || templateData.header_url) ? (
+                                templateData.header === "image" ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={headerPreviewUrl || templateData.header_url || ""} alt="header" className="w-full rounded mb-1 object-cover" style={{ maxHeight: "70px" }} />
+                                ) : templateData.header === "video" ? (
+                                  <div className="w-full rounded mb-1 bg-black flex items-center justify-center" style={{ height: "50px" }}>
+                                    <span className="text-white" style={{ fontSize: "14px" }}>▶</span>
+                                  </div>
+                                ) : (
+                                  <div className="w-full rounded mb-1 flex items-center gap-1 px-1.5 py-1" style={{ background: "#f0f0f0" }}>
+                                    <span style={{ fontSize: "10px" }}>📄</span>
+                                    <span className="truncate" style={{ color: "#555", fontSize: "clamp(6px,0.9vw,8px)" }}>{templateData.header.toUpperCase()}</span>
+                                  </div>
+                                )
+                              ) : null}
+
+                              {/* Body text */}
+                              <p className="whitespace-pre-wrap leading-relaxed" style={{ color: "#111b21", fontSize: "clamp(7px,1.1vw,10px)" }}>
+                                {(templateData.template_body || "Your message here…")
+                                  .replace(/\{\{1\}\}/g, "Rahul")
+                                  .replace(/\{\{2\}\}/g, "#12345")
+                                  .replace(/\{\{3\}\}/g, "today")}
+                              </p>
+
+                              {/* Footer */}
+                              {templateData.footer && (
+                                <p className="mt-1 pt-1" style={{ color: "#8696a0", borderTop: "1px solid #e9edef", fontSize: "clamp(6px,0.9vw,8px)" }}>
+                                  {templateData.footer}
+                                </p>
+                              )}
+
+                              {/* Timestamp */}
+                              <p className="text-right mt-0.5" style={{ color: "#8696a0", fontSize: "clamp(5px,0.8vw,7px)" }}>11:30 AM ✓✓</p>
+                            </div>
+                          </div>
+
+                          {/* Buttons */}
+                          {templateData.buttons.length > 0 && (
+                            <div className="flex justify-end">
+                              <div className="space-y-0.5" style={{ width: "85%" }}>
+                                {templateData.buttons.map((btn, i) => (
+                                  <div key={i} className="text-center py-1 rounded-lg font-medium" style={{ background: "#fff", color: "#0a7cff", boxShadow: "0 1px 2px rgba(0,0,0,0.1)", fontSize: "clamp(6px,0.9vw,9px)" }}>
+                                    {btn.text || `Button ${i + 1}`}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Input bar */}
+                        <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1.5" style={{ background: "#f0f2f5" }}>
+                          <div className="flex-1 rounded-full px-2 py-1" style={{ background: "#fff" }}>
+                            <span style={{ color: "#8696a0", fontSize: "clamp(6px,0.9vw,9px)" }}>Type a message</span>
+                          </div>
+                          <div className="rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "#00a884", width: "clamp(18px,2.5vw,24px)", height: "clamp(18px,2.5vw,24px)" }}>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M12 15c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V6z"/><path d="M17 12c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-2.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                          </div>
+                        </div>
+
+                        {/* Home indicator */}
+                        <div className="flex-shrink-0 flex justify-center py-1" style={{ background: "#f0f2f5" }}>
+                          <div className="rounded-full" style={{ width: "35%", height: "3px", background: "#000" }} />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 px-6 py-4" style={{ borderTop: "1px solid #ece9f8" }}>
+            <div className="flex justify-end gap-3 px-6 py-4 flex-shrink-0" style={{ borderTop: "1px solid #ece9f8" }}>
               {user?.role === "SALES_AGENT" ? (
                 <button onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow"
                   style={{ background: "linear-gradient(90deg,#7c3aed,#4f46e5)" }}>Close</button>

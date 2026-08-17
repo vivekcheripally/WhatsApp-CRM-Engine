@@ -78,16 +78,29 @@ def db_session() -> Generator[Session, None, None]:
     connection.close()
 
 
+from routes.deps import get_current_user
+
+
 @pytest.fixture
-def client(db_session: Session) -> Generator[TestClient, None, None]:
-    """FastAPI TestClient overriding get_db dependency with test database session."""
+def client(db_session: Session, sample_org: Organization) -> Generator[TestClient, None, None]:
+    """FastAPI TestClient overriding get_db and get_current_user with test session and tenant context."""
     def _override_get_db():
         try:
             yield db_session
         finally:
             pass
 
+    def _override_get_current_user():
+        return {
+            "id": str(uuid.uuid4()),
+            "email": "admin@testcorp.com",
+            "role": "ORG_ADMIN",
+            "organization_id": str(sample_org.id),
+            "must_change_password": False,
+        }
+
     app.dependency_overrides[get_db] = _override_get_db
+    app.dependency_overrides[get_current_user] = _override_get_current_user
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()

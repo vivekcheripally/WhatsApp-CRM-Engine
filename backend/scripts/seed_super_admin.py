@@ -5,9 +5,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import logging
-from core.database import SessionLocal
+from core.database import SessionLocal, engine, Base
 from core.security import hash_password
 from models.postgres_model import User, UserRole, UserStatus, Organization
+import models.postgres_model  # noqa: F401
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("seed_super_admin")
@@ -17,6 +18,8 @@ def seed_super_admin(
     email: str = "admin@platform.com",
     password: str = "SuperAdminSecret123!",
 ):
+    # Ensure tables exist in the configured database
+    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         # 1. Super Admin
@@ -43,7 +46,11 @@ def seed_super_admin(
         from models.postgres_model import OrganizationStatus
         org = db.query(Organization).first()
         if not org:
-            org = Organization(name="Acme Corp", status=OrganizationStatus.ACTIVE)
+            org = Organization(
+                name="Acme Corp",
+                slug="acme-corp",
+                status=OrganizationStatus.ACTIVE,
+            )
             db.add(org)
             db.commit()
             db.refresh(org)

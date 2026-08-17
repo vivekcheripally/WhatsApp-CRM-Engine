@@ -13,3 +13,7 @@ httpx
 boto3
 redis
 pydantic-settings
+aiosmtplib
+celery
+passlib
+bcrypt

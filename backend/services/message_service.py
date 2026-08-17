@@ -37,7 +37,7 @@ class MessageService:
         from services.conversation_service import ConversationRepository
         self.conv_repo = ConversationRepository(db)
 
-    def send_message(self, req: SendMessageRequest, agent_id: int = 1) -> dict:
+    def send_message(self, req: SendMessageRequest, agent_id: Optional[str | int | uuid.UUID] = None) -> dict:
         from services.whatsapp_service import WhatsAppService
         from services.webhook_service import WebhookService
         from schemas.whatsapp_inbox import MessageType as SchemaMessageType
@@ -260,7 +260,7 @@ class MessageService:
         if account:
             wa_repo.update(account.id, status=WhatsAppAccountStatus.DISCONNECTED)
 
-    def _base_create_kwargs(self, conv: WhatsAppConversation, agent_id: int) -> dict:
+    def _base_create_kwargs(self, conv: WhatsAppConversation, agent_id: Optional[str | int | uuid.UUID] = None) -> dict:
         """Common fields for any outbound agent message."""
         return {
             "organization_id": conv.organization_id,
@@ -269,7 +269,7 @@ class MessageService:
             "contact_id": conv.contact_id,
             "direction": MessageDirection.OUTBOUND,
             "sender_type": SenderType.AGENT,
-            "sender_id": agent_id,
+            "sender_id": str(agent_id) if agent_id is not None else None,
             "created_at": datetime.now(),
         }
 
@@ -281,7 +281,7 @@ class MessageService:
     def send_text_message(
         self,
         request: SendTextMessageRequest,
-        agent_id: int,
+        agent_id: Optional[str | int | uuid.UUID],
         phone_number_id: str,
         access_token: str,
     ) -> WhatsAppMessage:
@@ -327,7 +327,7 @@ class MessageService:
     def send_image_message(
         self,
         request: SendMediaMessageRequest,
-        agent_id: int,
+        agent_id: Optional[str | int | uuid.UUID],
         phone_number_id: str,
         access_token: str,
     ) -> WhatsAppMessage:
@@ -365,7 +365,7 @@ class MessageService:
     def send_video_message(
         self,
         request: SendMediaMessageRequest,
-        agent_id: int,
+        agent_id: Optional[str | int | uuid.UUID],
         phone_number_id: str,
         access_token: str,
     ) -> WhatsAppMessage:
@@ -403,7 +403,7 @@ class MessageService:
     def send_audio_message(
         self,
         request: SendMediaMessageRequest,
-        agent_id: int,
+        agent_id: Optional[str | int | uuid.UUID],
         phone_number_id: str,
         access_token: str,
     ) -> WhatsAppMessage:
@@ -438,7 +438,7 @@ class MessageService:
     def send_document_message(
         self,
         request: SendMediaMessageRequest,
-        agent_id: int,
+        agent_id: Optional[str | int | uuid.UUID],
         phone_number_id: str,
         access_token: str,
     ) -> WhatsAppMessage:
@@ -478,7 +478,7 @@ class MessageService:
     def send_template_message(
         self,
         request: SendTemplateMessageRequest,
-        agent_id: int,
+        agent_id: Optional[str | int | uuid.UUID],
         phone_number_id: str,
         access_token: str,
     ) -> WhatsAppMessage:
@@ -558,7 +558,7 @@ class MessageService:
         mime_type: str,
         message_type_str: str,
         caption: Optional[str],
-        agent_id: int,
+        agent_id: Optional[str | int | uuid.UUID],
         phone_number_id: str,
         access_token: str,
     ) -> dict:
@@ -583,8 +583,12 @@ class MessageService:
                 files={"file": (filename, file_bytes, mime_type)},
                 data={"messaging_product": "whatsapp"},
             )
+
+            if not upload_resp.is_success:
+                print(f"[send_media_upload] Media upload failed: {upload_resp.status_code} {upload_resp.text}")
             upload_resp.raise_for_status()
             meta_media_id = upload_resp.json().get("id")
+            print(f"[send_media_upload] Media uploaded to Meta: id={meta_media_id}")
 
         if not meta_media_id:
             raise ExternalAPIError("Media upload to Meta failed")
@@ -604,8 +608,10 @@ class MessageService:
             media_payload["filename"] = filename
 
         clean_phone = self._get_conv_phone(conv)
-
-        send_url = f"{base}/{version}/{phone_number_id}/messages"
+        
+        if not clean_phone:
+            raise ValidationError("Contact phone number is missing or invalid")
+        
         send_payload = {
             "messaging_product": "whatsapp",
             "to": clean_phone,
@@ -613,14 +619,11 @@ class MessageService:
             type_key: media_payload,
         }
 
-        with httpx.Client(timeout=30.0) as client:
-            send_resp = client.post(
-                send_url,
-                json=send_payload,
-                headers={**headers, "Content-Type": "application/json"},
-            )
-            send_resp.raise_for_status()
-            meta_msg_id = send_resp.json().get("messages", [{}])[0].get("id")
+        print(f"[send_media_upload] Sending {type_key} to {clean_phone}, media_id={meta_media_id}")
+
+        result = self._post_to_meta(phone_number_id, access_token, send_payload)
+        meta_msg_id = result.get("messages", [{}])[0].get("id")
+        print(f"[send_media_upload] Meta response: {result}")
 
         # 3. Create DB records
         msg = WhatsAppMessage(
@@ -631,7 +634,7 @@ class MessageService:
             meta_message_id=meta_msg_id,
             direction=MessageDirection.OUTBOUND,
             sender_type=SenderType.AGENT,
-            sender_id=agent_id,
+            sender_id=str(agent_id) if agent_id is not None else None,
             message_type=MessageType(message_type_str),
             caption=caption,
             status=MessageStatus.SENT,
@@ -693,7 +696,7 @@ class MessageService:
         conversation_id_str: str,
         message_type_str: str = "DOCUMENT",
         caption: Optional[str] = None,
-        agent_id: int = 1,
+        agent_id: Optional[str | int | uuid.UUID] = None,
     ) -> dict:
         if not file_bytes or not conversation_id_str:
             raise ValidationError("file_bytes and conversation_id are required")
@@ -724,7 +727,7 @@ class MessageService:
         longitude: float,
         name: str,
         address: str,
-        agent_id: int,
+        agent_id: Optional[str | int | uuid.UUID],
         phone_number_id: str,
         access_token: str,
     ) -> WhatsAppMessage:
@@ -770,7 +773,7 @@ class MessageService:
             meta_message_id=meta_msg_id,
             direction=MessageDirection.OUTBOUND,
             sender_type=SenderType.AGENT,
-            sender_id=agent_id,
+            sender_id=str(agent_id) if agent_id is not None else None,
             message_type=MessageType.LOCATION,
             content=content,
             status=MessageStatus.SENT,

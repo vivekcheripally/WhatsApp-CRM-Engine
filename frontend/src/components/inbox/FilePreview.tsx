@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Send, FileText, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { X, Send, FileText, Music, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Message } from "@/lib/types";
 
@@ -18,18 +17,22 @@ export function FilePreview({ file, mediaType, conversationId, onSent, onCancel 
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (mediaType === "image" || mediaType === "video") {
       const url = URL.createObjectURL(file);
-      // defer setting state to avoid setState-in-effect lint rule
       const t = setTimeout(() => setObjectUrl(url), 0);
-      return () => { clearTimeout(t); URL.revokeObjectURL(url); };
+      return () => {
+        clearTimeout(t);
+        URL.revokeObjectURL(url);
+      };
     }
   }, [file, mediaType]);
 
   const handleSend = async () => {
     setSending(true);
+    setError(null);
     try {
       const form = new FormData();
       form.append("file", file);
@@ -37,68 +40,224 @@ export function FilePreview({ file, mediaType, conversationId, onSent, onCancel 
       form.append("message_type", mediaType.toUpperCase());
       if (caption) form.append("caption", caption);
       const { data } = await api.post("/api/messages/send/media-upload", form);
-
       onSent(data as Message);
-    } catch (e) {
+    } catch (e: any) {
+      const detail =
+        e?.response?.data?.detail ||
+        e?.message ||
+        "Failed to send. Check your WhatsApp connection.";
+      setError(detail);
       console.error("File send failed", e);
     } finally {
       setSending(false);
     }
   };
 
-  const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+  const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+  const ext = file.name.split(".").pop()?.toUpperCase() ?? "";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-white dark:bg-[#202c33] rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
-        {/* Preview area */}
-        <div className="relative bg-black/10 dark:bg-black/30 flex items-center justify-center min-h-48">
-          {mediaType === "image" && objectUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={objectUrl} alt="preview" className="max-h-72 max-w-full object-contain" />
-          )}
-          {mediaType === "video" && objectUrl && (
-            <video src={objectUrl} controls className="max-h-72 max-w-full" />
-          )}
-          {(mediaType === "document" || mediaType === "audio") && (
-            <div className="flex flex-col items-center gap-3 py-8 text-gray-500 dark:text-gray-400">
-              <FileText className="h-12 w-12" />
-              <div className="text-center">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-200 max-w-48 truncate">{file.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{sizeMB} MB</p>
-              </div>
+    /* ── Backdrop ── */
+    <div
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ background: "rgba(11,20,26,0.97)" }}
+    >
+      {/* ── Header bar — WhatsApp Web style ── */}
+      <div
+        className="flex items-center gap-3 px-4 py-3 shrink-0"
+        style={{ background: "#202c33" }}
+      >
+        <button
+          type="button"
+          onClick={onCancel}
+          className="p-2 rounded-full transition-colors"
+          style={{ color: "#aebac1" }}
+          onMouseEnter={e => (e.currentTarget.style.background = "#374248")}
+          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+          title="Close"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate" style={{ color: "#e9edef" }}>
+            {file.name}
+          </p>
+          <p className="text-xs" style={{ color: "#8696a0" }}>
+            {sizeMB} MB
+          </p>
+        </div>
+      </div>
+
+      {/* ── Main preview area ── */}
+      <div
+        className="flex-1 min-h-0 flex items-center justify-center relative overflow-hidden"
+        style={{ background: "#111b21" }}
+      >
+        {/* Image: use checkerboard so transparent PNGs are visible */}
+        {mediaType === "image" && objectUrl && (
+          <div
+            className="flex items-center justify-center w-full h-full p-4"
+            style={{
+              backgroundImage:
+                "linear-gradient(45deg,#1a2630 25%,transparent 25%)," +
+                "linear-gradient(-45deg,#1a2630 25%,transparent 25%)," +
+                "linear-gradient(45deg,transparent 75%,#1a2630 75%)," +
+                "linear-gradient(-45deg,transparent 75%,#1a2630 75%)",
+              backgroundSize: "20px 20px",
+              backgroundPosition: "0 0,0 10px,10px -10px,-10px 0",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={objectUrl}
+              alt="preview"
+              style={{
+                maxHeight: "100%",
+                maxWidth: "100%",
+                objectFit: "contain",
+                borderRadius: "4px",
+                boxShadow: "0 4px 32px rgba(0,0,0,0.6)",
+                userSelect: "none",
+              }}
+            />
+          </div>
+        )}
+
+        {/* Video */}
+        {mediaType === "video" && objectUrl && (
+          <video
+            src={objectUrl}
+            controls
+            autoPlay
+            style={{
+              maxHeight: "100%",
+              maxWidth: "100%",
+              borderRadius: "4px",
+              boxShadow: "0 4px 32px rgba(0,0,0,0.6)",
+            }}
+          />
+        )}
+
+        {/* Audio */}
+        {mediaType === "audio" && (
+          <div
+            className="flex flex-col items-center justify-center gap-4 p-8 rounded-2xl"
+            style={{ background: "#202c33", border: "1px solid #2a3942", minWidth: "260px" }}
+          >
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ background: "#00a884" }}
+            >
+              <Music className="h-8 w-8 text-white" />
+            </div>
+            <p className="text-sm font-medium text-center truncate max-w-xs" style={{ color: "#e9edef" }}>
+              {file.name}
+            </p>
+            <p className="text-xs" style={{ color: "#8696a0" }}>
+              {sizeMB} MB · {ext}
+            </p>
+          </div>
+        )}
+
+        {/* Document */}
+        {mediaType === "document" && (
+          <div
+            className="flex flex-col items-center justify-center gap-4 p-8 rounded-2xl"
+            style={{ background: "#202c33", border: "1px solid #2a3942", minWidth: "260px" }}
+          >
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center"
+              style={{ background: "rgba(0,168,132,0.15)" }}
+            >
+              <FileText className="h-8 w-8" style={{ color: "#00a884" }} />
+            </div>
+            <p className="text-sm font-medium text-center truncate max-w-xs" style={{ color: "#e9edef" }}>
+              {file.name}
+            </p>
+            <p className="text-xs" style={{ color: "#8696a0" }}>
+              {sizeMB} MB · {ext}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ── Bottom bar — WhatsApp Web style ── */}
+      <div
+        className="shrink-0 flex flex-col gap-2 px-4 py-3"
+        style={{ background: "#202c33" }}
+      >
+        {/* Error banner */}
+        {error && (
+          <div
+            className="flex items-center gap-2 px-3 py-2 rounded-lg"
+            style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)" }}
+          >
+            <span className="text-xs flex-1" style={{ color: "#f87171" }}>⚠️ {error}</span>
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="text-sm leading-none"
+              style={{ color: "#f87171" }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Caption + send row */}
+        <div className="flex items-center gap-3">
+          {/* Caption input — only for image / video / document */}
+          {(mediaType === "image" || mediaType === "video" || mediaType === "document") && (
+            <div
+              className="flex-1 flex items-center rounded-lg px-4 py-2"
+              style={{ background: "#2a3942" }}
+            >
+              <input
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !sending) handleSend();
+                }}
+                placeholder="Add a caption…"
+                className="flex-1 bg-transparent text-sm focus:outline-none"
+                style={{ color: "#e9edef" }}
+              />
             </div>
           )}
+
+          {/* Spacer when no caption input (audio) */}
+          {mediaType === "audio" && <div className="flex-1" />}
+
+          {/* Cancel */}
           <button
             type="button"
             onClick={onCancel}
-            className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60 transition-colors"
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            style={{ color: "#aebac1" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "#374248")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           >
-            <X className="h-4 w-4" />
+            Cancel
           </button>
-        </div>
 
-        {/* Caption + send */}
-        <div className="p-4 space-y-3">
-          {(mediaType === "image" || mediaType === "video" || mediaType === "document") && (
-            <input
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              placeholder="Add a caption…"
-              className="w-full bg-gray-100 dark:bg-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none placeholder:text-gray-400"
-            />
-          )}
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={onCancel} className="flex-1">Cancel</Button>
-            <Button
-              onClick={handleSend}
-              disabled={sending}
-              className="flex-1 bg-[#00a884] hover:bg-[#00956f] text-white gap-2"
-            >
-              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Send
-            </Button>
-          </div>
+          {/* Send button */}
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={sending}
+            className="flex items-center justify-center w-11 h-11 rounded-full transition-all disabled:opacity-50 shrink-0"
+            style={{
+              background: sending ? "#008069" : "#00a884",
+              boxShadow: "0 2px 8px rgba(0,168,132,0.4)",
+            }}
+            title="Send"
+          >
+            {sending ? (
+              <Loader2 className="h-5 w-5 animate-spin text-white" />
+            ) : (
+              <Send className="h-5 w-5 text-white" style={{ marginLeft: "2px" }} />
+            )}
+          </button>
         </div>
       </div>
     </div>

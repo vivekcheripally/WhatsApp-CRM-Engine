@@ -4,8 +4,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useQueryClient } from "@tanstack/react-query";
 import { getWabaChannels, setDefaultChannel, WabaChannel } from "@/services/whatsappService";
 
-import { useAuth } from "@/context/AuthContext";
-
 interface WabaContextType {
   channels: WabaChannel[];
   activeChannel: WabaChannel | null;
@@ -19,19 +17,11 @@ const WabaContext = createContext<WabaContextType | undefined>(undefined);
 
 export function WabaProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
-  const { user, isLoading: authLoading } = useAuth();
   const [channels, setChannels] = useState<WabaChannel[]>([]);
   const [activeChannel, setActiveChannel] = useState<WabaChannel | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const refreshChannels = useCallback(async () => {
-    if (!user) {
-      setChannels([]);
-      setActiveChannel(null);
-      setIsLoading(false);
-      return;
-    }
-
     setIsLoading(true);
     try {
       const res = await getWabaChannels();
@@ -58,13 +48,20 @@ export function WabaProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
-    if (!authLoading) {
+    refreshChannels();
+    const handleRefetch = () => {
       refreshChannels();
-    }
-  }, [authLoading, refreshChannels]);
+    };
+    window.addEventListener("focus", handleRefetch);
+    window.addEventListener("waba-channels-refetch", handleRefetch);
+    return () => {
+      window.removeEventListener("focus", handleRefetch);
+      window.removeEventListener("waba-channels-refetch", handleRefetch);
+    };
+  }, [refreshChannels]);
 
   const selectChannel = (channelId: string) => {
     const matched = channels.find((c) => c.id === channelId);

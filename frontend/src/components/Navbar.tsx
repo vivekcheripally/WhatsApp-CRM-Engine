@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Bell, ChevronDown, MessageSquare, X, CheckCheck, User, FileText, Send, LogOut, Lock, ShieldAlert } from "lucide-react";
+import { Search, Bell, ChevronDown, MessageSquare, X, CheckCheck, User, FileText, Send, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useInboxStore } from "@/store/inbox-store";
 import { api } from "@/lib/api";
@@ -10,7 +10,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useWabaContext } from "@/context/WabaContext";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import WabaChannelSelector from "./WabaChannelSelector";
-import ChangePasswordModal from "./settings/ChangePasswordModal";
 
 /* ─── Types ─────────────────────────────────────────────────────────────────── */
 type SearchResult = {
@@ -487,11 +486,10 @@ function NotificationBell() {
 }
 
 function UserDropdownMenu() {
-  const { logout, revokeAllSessions } = useAuth();
+  const { logout } = useAuth();
   const { user, organization, role } = useCurrentUser();
   const { activeChannel } = useWabaContext();
   const [open, setOpen] = useState(false);
-  const [showChangePassword, setShowChangePassword] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -556,26 +554,6 @@ function UserDropdownMenu() {
           <button
             onClick={() => {
               setOpen(false);
-              setShowChangePassword(true);
-            }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <Lock size={14} className="text-gray-500" />
-            <span>Change Password</span>
-          </button>
-          <button
-            onClick={() => {
-              setOpen(false);
-              if (revokeAllSessions) revokeAllSessions();
-            }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-amber-700 rounded-lg hover:bg-amber-50 transition-colors"
-          >
-            <ShieldAlert size={14} className="text-amber-600" />
-            <span>Log Out All Devices</span>
-          </button>
-          <button
-            onClick={() => {
-              setOpen(false);
               if (logout) logout();
             }}
             className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
@@ -585,10 +563,6 @@ function UserDropdownMenu() {
           </button>
         </div>
       )}
-      <ChangePasswordModal
-        isOpen={showChangePassword}
-        onClose={() => setShowChangePassword(false)}
-      />
     </div>
   );
 }

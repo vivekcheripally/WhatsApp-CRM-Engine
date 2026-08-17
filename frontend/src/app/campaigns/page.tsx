@@ -42,6 +42,66 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+/* ── ContactCheckList — defined OUTSIDE parent so it never remounts on state change ── */
+function ContactCheckList({
+  contacts, data, setData,
+}: {
+  contacts: any[];
+  data: any;
+  setData: (v: any) => void;
+}) {
+  const allSelected = contacts.length > 0 && contacts.every(c => data.contact_ids.includes(c.id));
+  const someSelected = contacts.some(c => data.contact_ids.includes(c.id));
+
+  const toggleAll = () => {
+    setData({ ...data, contact_ids: allSelected ? [] : contacts.map(c => c.id) });
+  };
+
+  const toggleOne = (id: number, checked: boolean) => {
+    setData({
+      ...data,
+      contact_ids: checked
+        ? [...data.contact_ids, id]
+        : data.contact_ids.filter((x: number) => x !== id),
+    });
+  };
+
+  return (
+    <div className="rounded-xl p-3" style={{ background: "#f5f4fb", border: "1px solid #e0ddf5" }}>
+      {/* Header with Select All */}
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold" style={{ color: "#9390b5" }}>Select Contacts</p>
+        <label className="flex items-center gap-1.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            className="accent-violet-500"
+            checked={allSelected}
+            ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }}
+            onChange={toggleAll}
+          />
+          <span className="text-xs font-semibold" style={{ color: "#7c3aed" }}>
+            {allSelected ? "Deselect All" : "Select All"}
+          </span>
+        </label>
+      </div>
+      {/* Fixed-height scroll — position never resets because this component doesn't remount */}
+      <div className="max-h-36 overflow-y-auto space-y-0.5">
+        {contacts.map(c => (
+          <label key={c.id} className="flex items-center gap-2.5 py-1.5 cursor-pointer">
+            <input
+              type="checkbox"
+              className="accent-violet-500"
+              checked={data.contact_ids.includes(c.id)}
+              onChange={e => toggleOne(c.id, e.target.checked)}
+            />
+            <span className="text-sm" style={{ color: "#4b4880" }}>{c.name} — {c.phone_number}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function CampaignsPage() {
   const { activeChannel } = useWabaContext();
   const { hasRole } = useCurrentUser();
@@ -139,19 +199,6 @@ export default function CampaignsPage() {
   const completed = campaigns.filter(c => c.status === "completed").length;
   const running   = campaigns.filter(c => c.status === "running").length;
   const scheduled = campaigns.filter(c => c.status === "scheduled").length;
-
-  const ContactCheckList = ({ data, setData }: { data: any; setData: any }) => (
-    <div className="rounded-xl p-3 max-h-44 overflow-y-auto space-y-1" style={{ background: "#f5f4fb", border: "1px solid #e0ddf5" }}>
-      <p className="text-xs font-semibold mb-2" style={{ color: "#9390b5" }}>Select Contacts</p>
-      {contacts.map(c => (
-        <label key={c.id} className="flex items-center gap-2.5 py-1.5 cursor-pointer">
-          <input type="checkbox" className="accent-violet-500" checked={data.contact_ids.includes(c.id)}
-            onChange={e => setData({ ...data, contact_ids: e.target.checked ? [...data.contact_ids, c.id] : data.contact_ids.filter((x: number) => x !== c.id) })} />
-          <span className="text-sm" style={{ color: "#4b4880" }}>{c.name} — {c.phone_number}</span>
-        </label>
-      ))}
-    </div>
-  );
 
   const modalCard = { background: "#fff", border: "1px solid #ece9f8", boxShadow: "0 20px 60px rgba(100,80,200,0.15)" };
 
@@ -271,7 +318,7 @@ export default function CampaignsPage() {
               <option value="">Select Template</option>
               {templates.map(t => <option key={t.id} value={t.id}>{t.template_name}</option>)}
             </select>
-            <ContactCheckList data={campaignData} setData={setCampaignData} />
+            <ContactCheckList contacts={contacts} data={campaignData} setData={setCampaignData} />
             <p className="text-xs" style={{ color: "#9390b5" }}>Selected: {campaignData.contact_ids.length} contacts</p>
             <div className="flex justify-end gap-3 pt-1">
               <button onClick={() => setShowModal(false)} className="px-4 py-2.5 rounded-xl text-sm font-medium" style={{ background: "#f5f4fb", color: "#9390b5", border: "1px solid #e0ddf5" }}>Cancel</button>
@@ -296,7 +343,7 @@ export default function CampaignsPage() {
               <option value="">Select Template</option>
               {templates.filter(t => (t.status || t.meta_status || "").toUpperCase() === "APPROVED").map(t => <option key={t.id} value={t.id}>{t.template_name}</option>)}
             </select>
-            <ContactCheckList data={editData} setData={setEditData} />
+            <ContactCheckList contacts={contacts} data={editData} setData={setEditData} />
             <div className="flex justify-end gap-3 pt-1">
               <button onClick={() => setShowEditModal(false)} className="px-4 py-2.5 rounded-xl text-sm font-medium" style={{ background: "#f5f4fb", color: "#9390b5", border: "1px solid #e0ddf5" }}>Cancel</button>
               <button onClick={handleUpdate} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: "linear-gradient(90deg,#7c3aed,#4f46e5)", boxShadow: "0 4px 14px rgba(124,58,237,0.3)" }}>Update</button>

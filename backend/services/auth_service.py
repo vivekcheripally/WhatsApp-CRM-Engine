@@ -83,7 +83,8 @@ class AuthService:
                 "full_name": user.full_name,
                 "role": user.role.value if hasattr(user.role, "value") else str(user.role),
                 "organization_id": str(user.organization_id) if user.organization_id else None,
-                "must_change_password": bool(user.must_change_password),
+                
+                "must_change_password": getattr(user, "must_change_password", False),
             },
         }
 
@@ -186,7 +187,7 @@ class AuthService:
             },
         }
 
-    def change_password(self, user_id: str | uuid.UUID, old_password: str, new_password: str, confirm_password: str) -> dict:
+    def change_password(self, user_id: str | uuid.UUID, old_password: str, new_password: str, confirm_password: Optional[str] = None) -> dict:
         user = self.db.query(User).filter(User.id == uuid.UUID(str(user_id))).first()
         if not user:
             raise ResourceNotFoundError("User not found")
@@ -194,7 +195,7 @@ class AuthService:
         if not verify_password(old_password, user.hashed_password):
             raise ValidationError("Current password is incorrect")
 
-        if new_password != confirm_password:
+        if confirm_password is not None and new_password != confirm_password:
             raise ValidationError("New password and confirm password do not match")
 
         self._validate_password_strength(new_password)
@@ -206,3 +207,19 @@ class AuthService:
         return {"message": "Password changed successfully"}
 
 
+
+    # def change_password(self, user_id: str, current_password: str, new_password: str) -> dict:
+    #     user = self.db.query(User).filter(User.id == uuid.UUID(user_id)).first()
+    #     if not user:
+    #         raise ResourceNotFoundError("User not found")
+    #     if not verify_password(current_password, user.hashed_password):
+    #         raise ValidationError("Current password is incorrect")
+    #     if len(new_password) < 6:
+    #         raise ValidationError("New password must be at least 6 characters long")
+    #     if current_password == new_password:
+    #         raise ValidationError("New password must be different from current password")
+
+    #     user.hashed_password = hash_password(new_password)
+    #     user.must_change_password = False
+    #     self.db.commit()
+    #     return {"success": True, "message": "Password changed successfully"}

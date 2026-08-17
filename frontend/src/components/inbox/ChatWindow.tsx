@@ -7,7 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Send, MoreVertical, ArrowLeft, Search, X,
-  ChevronUp, ChevronDown, Pencil, Smile, ArrowDown, CornerUpLeft, FileText, Trash2, Sparkles, Calendar,
+  ChevronUp, ChevronDown, Pencil, Smile, ArrowDown, CornerUpLeft, FileText, Trash2, Sparkles, Calendar, Video, Phone,
 } from "lucide-react";
 import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { useInboxStore } from "@/store/inbox-store";
@@ -64,6 +64,19 @@ export function ChatWindow({ conversationId, onBack, onContactClick }: ChatWindo
   const searchInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
+        setShowEmojiPicker(false);
+      }
+    }
+    if (showEmojiPicker) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showEmojiPicker]);
 
   const { mutateAsync: updateConv } = useUpdateConversation();
   const { mutateAsync: claimConv, isPending: isClaiming } = useClaimConversation();
@@ -334,11 +347,20 @@ export function ChatWindow({ conversationId, onBack, onContactClick }: ChatWindo
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "#f5f6fa" }}>
+    <div
+      className="flex flex-col h-full relative"
+      style={{
+        backgroundColor: "#eae6df",
+        backgroundImage: "url('/whatsapp-doodle-bg.png')",
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
 
       {/* ── Header ── */}
       <div
-        className="flex items-center gap-3 px-5 py-3 flex-shrink-0"
+        className="flex items-center gap-3 px-5 py-3 flex-shrink-0 relative z-10"
         style={{ background: "#ffffff", borderBottom: "1px solid #f0f1f5" }}
       >
         {onBack && (
@@ -354,7 +376,7 @@ export function ChatWindow({ conversationId, onBack, onContactClick }: ChatWindo
         >
           <ContactAvatar name={conversation.customer_name} phone={conversation.customer_phone} className="h-10 w-10" />
         </button>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={onContactClick}>
           <div className="flex items-center gap-2 group">
             {editingName ? (
               <input
@@ -363,6 +385,7 @@ export function ChatWindow({ conversationId, onBack, onContactClick }: ChatWindo
                 onChange={e => setNameValue(e.target.value)}
                 onKeyDown={handleNameKeyDown}
                 onBlur={handleNameSave}
+                onClick={e => e.stopPropagation()}
                 className="font-semibold text-sm focus:outline-none border-b-2 bg-transparent"
                 style={{ borderColor: "#7c3aed", color: "#1a1d23", width: "160px" }}
                 placeholder="Enter name"
@@ -370,16 +393,15 @@ export function ChatWindow({ conversationId, onBack, onContactClick }: ChatWindo
             ) : (
               <>
                 <span
-                  className="font-semibold text-[14px] cursor-pointer hover:underline"
+                  className="font-semibold text-[14px] truncate"
                   style={{ color: "#1a1d23" }}
-                  onClick={onContactClick}
                   title="View contact info"
                 >
                   {conversation.customer_name || conversation.customer_phone}
                 </span>
                 <button
                   type="button"
-                  onClick={() => { setNameValue(conversation.customer_name ?? ""); setEditingName(true); }}
+                  onClick={(e) => { e.stopPropagation(); setNameValue(conversation.customer_name ?? ""); setEditingName(true); }}
                   className="opacity-0 group-hover:opacity-100 transition-opacity"
                   style={{ color: "#b0b3c6" }}
                 >
@@ -397,45 +419,49 @@ export function ChatWindow({ conversationId, onBack, onContactClick }: ChatWindo
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {!(conversation as any).assignee_id && !conversation.assigned_agent_id ? (
-            <button
-              type="button"
-              onClick={() => claimConv(conversationId)}
-              disabled={isClaiming}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white transition-all shadow hover:opacity-90 disabled:opacity-50"
-              style={{ background: "linear-gradient(90deg,#7c3aed,#5b21b6)" }}
-            >
-              {isClaiming ? "Claiming…" : "⚡ Claim Thread"}
-            </button>
-          ) : null}
-
-          <AssignAgentModal conversationId={conversationId} currentAgentId={(conversation as any).assignee_id || conversation.assigned_agent_id}>
-            <button
-              type="button"
-              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-              style={{ background: "#f0eeff", color: "#7c3aed" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#e5e0ff")}
-              onMouseLeave={e => (e.currentTarget.style.background = "#f0eeff")}
-            >
-              {(conversation as any).assignee_id || conversation.assigned_agent_id ? "Reassign" : "Assign"}
-            </button>
-          </AssignAgentModal>
-          {[
-            { icon: Search, action: () => setSearchOpen(v => !v) },
-            { icon: MoreVertical, action: () => {} },
-          ].map(({ icon: Icon, action }, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={action}
-              className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
-              style={{ color: "#9498b0" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#f5f6fa")}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-            >
-              <Icon className="h-4 w-4" />
-            </button>
-          ))}
+          <button
+            type="button"
+            onClick={() => alert("Video call feature coming soon!")}
+            className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
+            style={{ color: "#9498b0" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "#f5f6fa")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            title="Video call"
+          >
+            <Video className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => alert("Voice call feature coming soon!")}
+            className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
+            style={{ color: "#9498b0" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "#f5f6fa")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            title="Voice call"
+          >
+            <Phone className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setSearchOpen(v => !v)}
+            className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
+            style={{ color: "#9498b0" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "#f5f6fa")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            title="Search"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
+            style={{ color: "#9498b0" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "#f5f6fa")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            title="Menu"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -484,7 +510,6 @@ export function ChatWindow({ conversationId, onBack, onContactClick }: ChatWindo
         ref={messagesContainerRef}
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto px-6 py-4 space-y-1"
-        style={{ background: "#f5f6fa" }}
       >
         {msgsLoading ? (
           <MessageSkeleton />
@@ -602,22 +627,22 @@ export function ChatWindow({ conversationId, onBack, onContactClick }: ChatWindo
         /* ── Composer ── */
         <div
           className="px-4 py-3 flex-shrink-0"
-          style={{ background: "#ffffff", borderTop: "1px solid #f0f1f5" }}
+          style={{ background: "#f0f2f5", borderTop: "1px solid #e9edef" }}
         >
         {/* Reply preview */}
         {replyTo && (
           <div
             className="flex items-center gap-2 rounded-xl px-3 py-2 mb-2"
-            style={{ background: "#f0eeff", borderLeft: "3px solid #7c3aed" }}
+            style={{ background: "#d9fdd3", borderLeft: "3px solid #008069" }}
           >
-            <CornerUpLeft className="h-4 w-4 shrink-0" style={{ color: "#7c3aed" }} />
+            <CornerUpLeft className="h-4 w-4 shrink-0" style={{ color: "#008069" }} />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold" style={{ color: "#7c3aed" }}>
+              <p className="text-xs font-semibold" style={{ color: "#008069" }}>
                 {replyTo.sender_type === "AGENT" ? "You" : "Customer"}
               </p>
-              <p className="text-xs truncate" style={{ color: "#6b7080" }}>{replyTo.content ?? "📎 Media"}</p>
+              <p className="text-xs truncate" style={{ color: "#111b21" }}>{replyTo.content ?? "📎 Media"}</p>
             </div>
-            <button type="button" onClick={() => setReplyTo(null)} style={{ color: "#b0b3c6" }}>
+            <button type="button" onClick={() => setReplyTo(null)} style={{ color: "#667781" }}>
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -632,16 +657,16 @@ export function ChatWindow({ conversationId, onBack, onContactClick }: ChatWindo
         ) : (
           <div className="flex items-end gap-2">
             {/* Emoji */}
-            <div className="relative">
+            <div className="relative" ref={emojiPickerRef}>
               <button
                 type="button"
                 onClick={() => setShowEmojiPicker(v => !v)}
-                className="flex items-center justify-center w-9 h-9 rounded-xl transition-colors"
-                style={{ color: "#b0b3c6" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#f5f6fa")}
+                className="flex items-center justify-center w-9 h-9 rounded-full transition-colors"
+                style={{ color: "#54656f" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#e9edef")}
                 onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               >
-                <Smile className="h-5 w-5" />
+                <Smile className="h-6 w-6" />
               </button>
               {showEmojiPicker && (
                 <div className="absolute bottom-12 left-0 z-50 shadow-2xl rounded-2xl overflow-hidden">
@@ -651,36 +676,30 @@ export function ChatWindow({ conversationId, onBack, onContactClick }: ChatWindo
             </div>
 
             {/* Attachment */}
-            <MediaUploadButton conversationId={conversationId} onSent={handleMediaSent} onPreview={triggerFilePicker} />
+            <MediaUploadButton
+              conversationId={conversationId}
+              onSent={handleMediaSent}
+              onPreview={triggerFilePicker}
+              onOpenChange={(isOpen) => { if (isOpen) setShowEmojiPicker(false); }}
+            />
 
             {/* Template */}
             <button
               type="button"
-              onClick={() => setShowTemplateModal(true)}
-              className="flex items-center justify-center w-9 h-9 rounded-xl transition-colors"
-              style={{ color: "#b0b3c6" }}
-              onMouseEnter={e => (e.currentTarget.style.background = "#f5f6fa")}
+              onClick={() => { setShowEmojiPicker(false); setShowTemplateModal(true); }}
+              className="flex items-center justify-center w-9 h-9 rounded-full transition-colors"
+              style={{ color: "#54656f" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#e9edef")}
               onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               title="Send template"
             >
-              <FileText className="h-4 w-4" />
-            </button>
-
-            {/* AI Reply Placeholder */}
-            <button
-              type="button"
-              onClick={() => alert("AI Reply feature coming soon!")}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-purple-200 bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors"
-              title="Generate AI Reply suggestion"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>AI Reply</span>
+              <FileText className="h-5 w-5" />
             </button>
 
             {/* Input */}
             <div
-              className="flex-1 flex items-end rounded-2xl px-4 py-2.5 relative"
-              style={{ background: "#f5f6fa", border: "1.5px solid #e8eaf0" }}
+              className="flex-1 flex items-end rounded-lg px-4 py-2.5 relative"
+              style={{ background: "#ffffff", border: "none" }}
             >
               {cannedQuery !== null && (
                 <CannedResponses query={cannedQuery} onSelect={handleCannedSelect} onClose={() => setCannedQuery(null)} />
@@ -690,10 +709,10 @@ export function ChatWindow({ conversationId, onBack, onContactClick }: ChatWindo
                 value={text}
                 onChange={e => handleTextChange(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type a message or / for quick replies"
+                placeholder="Type a message"
                 rows={1}
                 className="flex-1 bg-transparent text-sm resize-none focus:outline-none max-h-32 leading-relaxed"
-                style={{ color: "#1a1d23", minHeight: "22px" }}
+                style={{ color: "#111b21", minHeight: "22px" }}
               />
             </div>
 
@@ -703,8 +722,8 @@ export function ChatWindow({ conversationId, onBack, onContactClick }: ChatWindo
                 type="button"
                 onClick={handleSend}
                 disabled={isSending}
-                className="flex items-center justify-center w-10 h-10 rounded-xl flex-shrink-0 transition-all disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)", color: "#ffffff", boxShadow: "0 4px 14px rgba(124,58,237,0.4)" }}
+                className="flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 transition-all disabled:opacity-60"
+                style={{ background: "#008069", color: "#ffffff" }}
               >
                 <Send className="h-4 w-4" />
               </button>

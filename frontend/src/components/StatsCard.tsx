@@ -5,20 +5,16 @@ import React from "react";
 interface StatsCardProps {
   title: string;
   value: string | number;
-  change?: string;
   icon: React.ReactNode;
   gradient?: string;
   glowClass?: string;
-  trend?: "up" | "down";
 }
 
 export default function StatsCard({
   title,
   value,
-  change,
   icon,
   gradient = "linear-gradient(135deg,#7c3aed,#4f46e5)",
-  trend = "up",
 }: StatsCardProps) {
   return (
     <div
@@ -36,11 +32,6 @@ export default function StatsCard({
         <p className="text-[28px] font-bold leading-none tabular-nums" style={{ color: "#1a1040" }}>
           {typeof value === "number" ? value.toLocaleString() : (value ?? 0)}
         </p>
-        {change && (
-          <p className="text-[11px] mt-2 font-medium" style={{ color: trend === "up" ? "#10b981" : "#f43f5e" }}>
-            {trend === "up" ? "↑" : "↓"} {change}
-          </p>
-        )}
       </div>
       {/* Icon — light tinted background, icon color matches gradient */}
       <div
